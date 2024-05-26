@@ -17,10 +17,11 @@ class Main
             lines.each do |line|
                 if line.include? "延伸閱讀" or line.include? "本文同步發表於" or line.include? "Like Z Realm" or line.include? "有任何問題及指教歡迎與我聯絡。" or line.include? "converted from Medium by [ZMediumToMarkdown]"
                     
-                    newLines.append("\r\n\r\n===\r\n\r\nThis article was first published in Traditional Chinese on Medium ➡️ [**View Here**](https://medium.com/p/#{id}){:target=\"_blank\"}\r\n")
+                    newLines.append("\r\n\r\n===")
                     if ch_url_exists
-                        newLines.append(ch_text)
+                        newLines.append("\r\n\r\n#{ch_text}")
                     end
+                    newLines.append("\r\n\r\n===\r\n\r\nThis article was first published in Traditional Chinese on Medium ➡️ [**View Here**](https://medium.com/p/#{id}){:target=\"_blank\"}\r\n")
 
                     break
                 end
