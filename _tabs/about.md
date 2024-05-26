@@ -10,7 +10,7 @@ order: 4
 
 iOS/Web Developer @ Taipei / Taiwan 🇹🇼
 
-[My Real Life](/real/) | [Contact Me](/contact/) | [Google 搜尋出現與本人李仲澄無關之負面新聞聲明](/posts/declaration_for_google_search_result/)
+[My Real Life](/real/) | [Contact Me](/contact/) 
 
 ## Skills
 - iOS (Swift/Obj-C)
@@ -28,7 +28,7 @@ iOS/Web Developer @ Taipei / Taiwan 🇹🇼
 ## Experience
 
 ### [Pinkoi | 亞洲領先設計購物網站| Design the way you are](https://www.pinkoi.com/){:target="_blank"}
-- [2022/01 ~ 2023/08] App Platform Team **Enginner Lead**
+- [2022/01 ~ 2023/08] App Platform Team **Engineer Lead**
 - [2021/03 ~ 2023/08] **iOS Developer**
 - [2021/07 ~ 2021/12] **iOS Team Lead**
 
