@@ -6,7 +6,7 @@ on:
   workflow_call:
 
 concurrency:
-  group: "pages"
+  group: "pages-en"
   cancel-in-progress: true
 
 permissions:
