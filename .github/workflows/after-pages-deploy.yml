@@ -28,11 +28,11 @@ jobs:
             to_entries
             | map({
                 redirect: {
-                  source_url: ("https://zhgchg.li" + .key),
+                  source_url: ("https://en.zhgchg.li" + .key),
                   target_url: (
                     if (.value | startswith("http"))
                     then .value
-                    else "https://zhgchg.li" + .value
+                    else "https://en.zhgchg.li" + .value
                     end
                   ),
                   status_code: 301
