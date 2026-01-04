@@ -1,0 +1,52 @@
+name: After Pages Deployment
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["pages-build-deployment"]
+    types: [completed]
+
+concurrency:
+  group: "zhgchgli-after-pages-deploy"
+  cancel-in-progress: true
+
+jobs:
+  after_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print deployment info
+        env:
+          CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          CLOUDFLARE_LIST_ID: "${{ secrets.CLOUDFLARE_LIST_ID }}"
+          CLOUDFLARE_TOKEN: "${{ secrets.CLOUDFLARE_TOKEN }}"
+          CLOUDFLARE_REDIRECT_JSON_URL: "${{ secrets.CLOUDFLARE_REDIRECT_JSON_URL }}"
+        run: |
+          set -euo pipefail
+          
+          payload="$(curl -fsSL "${CLOUDFLARE_REDIRECT_JSON_URL}en.zhgchg.li" | jq '
+            to_entries
+            | map({
+                redirect: {
+                  source_url: ("https://zhgchg.li" + .key),
+                  target_url: (
+                    if (.value | startswith("http"))
+                    then .value
+                    else "https://zhgchg.li" + .value
+                    end
+                  ),
+                  status_code: 301
+                }
+              })
+          ')"
+          
+          # 送出並保留 response body 方便 debug
+          resp="$(curl -sS -f -X PUT "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/rules/lists/${CLOUDFLARE_LIST_ID}/items" \
+            -H "Authorization: Bearer ${CLOUDFLARE_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$payload" || true)"
+          
+          echo "$resp"
+          
+          # 如果 Cloudflare 回 success=false 或根本沒 success，直接 fail
+          echo "$resp" | jq -e '.success == true' >/dev/null
