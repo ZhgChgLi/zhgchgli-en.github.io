@@ -1,80 +1,70 @@
-name: "Build and Deploy"
+name: Build & Deploy Jekyll site to GitHub Pages
+
+# Shell repository for en.zhgchg.li.
+# Content lives in ZhgChgLi/zhgchgli.github.io; this repo just clones it and
+# builds the `en` language overlay (_config.en.yml + L10n/posts/en/).
+# Triggered manually, on push to main, or via the `master-updated`
+# repository_dispatch fired by the source repo after it deploys.
+
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
-  workflow_call:
+  repository_dispatch:
+    types: [master-updated]
+
+env:
+  DEPLOY_LANG: en
+  SOURCE_REPO: ZhgChgLi/zhgchgli.github.io
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: "pages-en"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
-permissions:
-  contents: write
-
-env:
-  L10n: en
-  
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
-          
-      - name: Clone other repo to root
-        run: |
-          git clone https://github.com/ZhgChgLi/zhgchgli.github.io.git ./source
-    
-      - name: Copy all files from source to repo root (exclude .git, .github)
-        run: |
-          rsync -a --exclude='.git*' source/ ./
-          rm -rf ./source
-          
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v4
+      - name: Clone source content repo
+        run: git clone --depth 1 "https://github.com/${SOURCE_REPO}.git" .
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.3
+          ruby-version: '3.3'
           bundler-cache: true
 
-      - name: Setup
-        run: bash tools/setup.sh
+      - uses: actions/configure-pages@v5
+        id: pages
 
-      - name: Build site
-        run: bundle exec jekyll b -d "_site${{ steps.pages.outputs.base_path }}"
+      - name: Generate assets/data/photos.json (LQIP dimensions)
+        run: ./bin/generate-photos-json
+
+      - name: Build with bin/lang
         env:
-          JEKYLL_ENV: "production"
+          JEKYLL_ENV: production
           MEDIUM_HOST: "${{ secrets.MEDIUM_HOST }}"
           MEDIUM_COOKIE_SID: "${{ secrets.MEDIUM_COOKIE_SID }}"
           MEDIUM_COOKIE_UID: "${{ secrets.MEDIUM_COOKIE_UID }}"
           Analytics_URL: "${{ secrets.Analytics_URL }}"
-          
-      - name: Test site
         run: |
-          bundle exec htmlproofer "_site${{ steps.pages.outputs.base_path }}" \
-            \-\-disable-external \
-            \-\-no-enforce-https \
-            \-\-ignore-empty-alt \
-            \-\-ignore-urls "/^http:\/\/127.0.0.1/,/^http:\/\/0.0.0.0/,/^http:\/\/localhost/"
+          ./bin/lang "${DEPLOY_LANG}" build \
+            --baseurl "${{ steps.pages.outputs.base_path }}"
 
-      - name: Deploy
-        run: bash tools/deploy.sh
-      # - name: Upload site artifact
-      #   uses: actions/upload-pages-artifact@v3
-      #   with:
-      #     path: "_site${{ steps.pages.outputs.base_path }}"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
 
-  # deploy:
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   steps:
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
